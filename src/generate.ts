@@ -16,10 +16,10 @@ export function generateSitemapPlugin<T extends string>(sitemap: Sitemap<T>) {
   return {
     name: "tanstack-router-sitemap",
     apply: "build" as const,
-    closeBundle: async () => {
-      await generateSitemap(sitemap);
+    buildStart: async () => {
+      await generateSitemap(sitemap)
     },
-  };
+  }
 }
 
 export async function generateSitemap<T extends string>(sitemap: Sitemap<T>) {
