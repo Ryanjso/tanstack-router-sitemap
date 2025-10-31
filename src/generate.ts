@@ -12,17 +12,34 @@ interface FinalSitemapEntry {
   priority?: number; // e.g. 0.8
 }
 
+// A small vite config type for our purposes.
+type ViteConfig = {
+  build?: {
+    outDir?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
 export function generateSitemapPlugin<T extends string>(sitemap: Sitemap<T>) {
+  let outDir = "dist/client"; // Default output directory
+
   return {
     name: "tanstack-router-sitemap",
     apply: "build" as const,
+    configResolved: (config: ViteConfig) => {
+      // Replace outDir with the one specified in Vite config.
+      if (config.build && config.build.outDir && config.build.outDir.endsWith("client")) {
+        outDir = config.build.outDir;
+      }
+    },
     closeBundle: async () => {
-      await generateSitemap(sitemap);
+      await generateSitemap(sitemap, outDir);
     },
   };
 }
 
-export async function generateSitemap<T extends string>(sitemap: Sitemap<T>) {
+export async function generateSitemap<T extends string>(sitemap: Sitemap<T>, outDir: string) {
   console.log("Generating sitemap...");
   const startTime = Date.now();
   const finalEntries: FinalSitemapEntry[] = [];
@@ -71,8 +88,8 @@ export async function generateSitemap<T extends string>(sitemap: Sitemap<T>) {
     }
   }
 
-  // Dynamically resolve the path to the public folder
-  const outputFile = path.resolve(process.cwd(), "public", "sitemap.xml");
+  // Dynamically resolve the path to the outDir for client
+  const outputFile = path.resolve(process.cwd(), outDir, "sitemap.xml");
 
   const writeStream = createWriteStream(outputFile);
   const sitemapStream = new SitemapStream({ hostname: siteUrl });
